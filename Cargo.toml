@@ -1,0 +1,7 @@
+[package]
+name = "wiring-pi-rs"
+version = "0.1.0"
+authors = ["Dylan Maccora <maccora17@gmail.com>"]
+
+[dependencies]
+wiringPi-bindings = { path = "wiringPi-bindings" }
