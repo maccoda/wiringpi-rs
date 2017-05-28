@@ -72,6 +72,23 @@ impl Ordinal for ResistorMode {
     }
 }
 
+/// Possible modes that the PWM generator can be run in.
+#[derive(Debug)]
+pub enum PwmMode {
+    /// Default mode of the PWM on the Raspberry Pi
+    Balanced,
+    MarkSpace,
+}
+
+impl Ordinal for PwmMode {
+    fn ordinal(&self) -> i32 {
+        match self {
+            &PwmMode::MarkSpace => 0,
+            &PwmMode::Balanced => 1,
+        }
+    }
+}
+
 /// Trait to allow for enumerations to be converted to their ordinal
 /// representation within the enumeration.
 ///

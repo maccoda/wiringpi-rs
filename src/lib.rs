@@ -51,7 +51,9 @@ impl WiringPi {
                                        WiringPiConfiguration::Def => bindings::wiringPiSetup(),
                                        WiringPiConfiguration::Gpio => bindings::wiringPiSetupGpio(),
                                        WiringPiConfiguration::Phys => bindings::wiringPiSetupPhys(),
-                                       WiringPiConfiguration::Sys => bindings::wiringPiSetupSys(),
+                                       WiringPiConfiguration::Sys => {
+                                           println!("NOTE: Cannot change the mode if the pin. To do so need to change via gpio program.");
+                                           bindings::wiringPiSetupSys()},
                                    };
                                })
         }
@@ -65,6 +67,67 @@ impl WiringPi {
             mode: PinModes::Output,
             config: self.config.clone(),
         }
+    }
+
+    /// Writes the byte provided to the first 8 GPIO pins. This is a more
+    /// efficient way of writing to all.
+    pub fn digital_write_byte(&self, value: i32) {
+        // TODO cannot be done in sys mode
+        unsafe {
+            bindings::digitalWriteByte(value);
+        }
+    }
+
+    /// Set the mode of the PWM generator to that supplied.
+    pub fn pwm_set_mode(&self, mode: PwmMode) {
+        // TODO cannot be done in sys mode
+        unsafe {
+            bindings::pwmSetMode(mode.ordinal());
+        }
+    }
+
+    /// Set the range register of the PWM generator.
+    ///
+    /// The default value is **1024**.
+    pub fn pwm_set_range(&self, range: u32) {
+        // TODO cannot be done in sys mode
+        unsafe {
+            bindings::pwmSetRange(range);
+        }
+    }
+
+    /// Sets the clock divisor to that provided.
+    pub fn pwm_set_clock(&self, divisor: i32) {
+        // TODO cannot be done in sys mode
+        unsafe {
+            bindings::pwmSetClock(divisor);
+        }
+    }
+
+    /// Returns the board revision of the Raspberry Pi. This is most applicable
+    /// when configured to be using Broadcom GPIO numbering as they have changed
+    /// from revisions.
+    pub fn pi_board_rev() -> i32 {
+        // TODO look into how this can be made into an enum
+        unsafe { bindings::piBoardRev() }
+    }
+
+    /// Maps the provided wiringPi pin number to the Broadcom GPIO pin number.
+    pub fn wpi_pin_to_gpio(pin_number: i32) -> i32 {
+        unsafe { bindings::wpiPinToGpio(pin_number) }
+    }
+
+    /// Maps the provided physical pin on the **P1** connector to the Broadcom
+    /// GPIO pin number.
+    pub fn phys_pin_to_gpio(pin_numer: i32) -> i32 {
+        unsafe { bindings::physPinToGpio(pin_numer) }
+    }
+
+    /// Sets the "strength" of the pad drivers for the provided group of pins.
+    ///
+    /// There are 3 groups of pins and the drive strength is from 0 to 7.
+    pub fn set_pad_drive(group: i32, value: i32) {
+        unsafe { bindings::setPadDrive(group, value) }
     }
 }
 
