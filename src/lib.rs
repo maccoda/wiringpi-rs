@@ -15,6 +15,7 @@ error_chain!{
     }
 }
 
+/// Posible configurations for initializing the wiringPi library.
 #[derive(Debug, Clone)]
 pub enum WiringPiConfiguration {
     /// Sets up **wiringPi** and uses the wiringPi numbering scheme for pins.
@@ -128,6 +129,39 @@ impl WiringPi {
     /// There are 3 groups of pins and the drive strength is from 0 to 7.
     pub fn set_pad_drive(group: i32, value: i32) {
         unsafe { bindings::setPadDrive(group, value) }
+    }
+
+    /// Number of milliseconds (10^-3) since wiringPi library was initialized.
+    ///
+    /// This number will wrap after **49 days**.
+    pub fn millis(&self) -> u32 {
+        unsafe { bindings::millis() }
+    }
+
+    /// Number of microseconds (10^-6) since wiringPi library was initialized.
+    ///
+    /// This number will wrap after approximately **71 minutes**.
+    pub fn micros(&self) -> u32 {
+        unsafe { bindings::micros() }
+    }
+
+    /// Pauses program execution for the given number of *milliseconds*.
+    ///
+    /// Note the maximum amount of delay is approximately 29 days.
+    pub fn delay(&self, delay_millis: u32) {
+        unsafe { bindings::delay(delay_millis) }
+    }
+
+    /// Pauses program execution for the given number of *microseconds*.
+    ///
+    /// Note the maximum amount of delay is approximately 71 minutes.
+    ///
+    /// Delays under 100 microseconds are timed using a hard-coded loop
+    /// continually polling the system time. Delays greater than 100
+    /// microseconds are done using the system `nanosleep` function. It is worth
+    /// noting the implications of these on the overall performance.
+    pub fn delay_micro(&self, delay_micros: u32) {
+        unsafe { bindings::delayMicroseconds(delay_micros) }
     }
 }
 
