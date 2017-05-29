@@ -6,6 +6,9 @@ use std::sync::{Once, ONCE_INIT};
 
 pub mod constants;
 
+#[cfg(feature = "serial")]
+pub mod serial;
+
 use constants::*;
 
 error_chain!{

@@ -6,3 +6,7 @@ authors = ["Dylan Maccora <maccora17@gmail.com>"]
 [dependencies]
 wiringPi-bindings = { path = "wiringPi-bindings" }
 error-chain = "0.10"
+
+
+[features]
+serial = ["wiringPi-bindings/serial"]

@@ -8,19 +8,22 @@ fn main() {
     // shared library.
     // println!("cargo:rustc-link-search=native=/usr/local/include/wiringPi/wiringPi");
     println!("cargo:rustc-link-lib=wiringPi");
+    // Crpyt needs to be linked last (need to look into why this is)
     println!("cargo:rustc-link-lib=crypt");
 
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
     // the resulting bindings.
     let bindings = bindgen::Builder::default()
-        // Do not generate unstable Rust code that
-        // requires a nightly rustc and enabling
-        // unstable features.
         .no_unstable_rust()
-        // The input header we would like to generate
-        // bindings for.
+        // .header("../WiringPi/wiringPi/wiringPi.h")
+        // .header("../WiringPi/wiringPi/wiringSerial.h")
         .header("wrapper.h")
+    // #[cfg(feature = "serial")]
+    // let bindings: bindgen::Builder = bindings.header("../WiringPi/wiringPi/wiringSerial.h");
+
+
+    // let bindings = bindings
         // Want some comments
         .generate_comments(true)
         // Finish the builder and generate the bindings.
