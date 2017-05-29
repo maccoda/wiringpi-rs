@@ -12,6 +12,7 @@ error_chain!{
     errors {
         IncorrectConfiguration(t: String)
         IllegalPinMode(t: String)
+        WiringPiFail
     }
 }
 
@@ -163,7 +164,50 @@ impl WiringPi {
     pub fn delay_micro(&self, delay_micros: u32) {
         unsafe { bindings::delayMicroseconds(delay_micros) }
     }
+
+    /// Attempts to shift program to a higher priority and enables real-time scheduling.
+    ///
+    /// # Errors
+    /// * This has no effect when not run as root
+    pub fn promote_thread_priority(&self, priority: ThreadPriority) -> Result<()> {
+        // TODO This should be run in root as it is the only time it will have effect.
+        unsafe {
+            let result = bindings::piHiPri(priority.0 as i32);
+            if result == 0 {
+                Ok(())
+            } else {
+                Err(ErrorKind::WiringPiFail.into())
+            }
+        }
+    }
+
+    /// Registers the provided function to be called for the configured interupt
+    /// type on the specified pin.
+    ///
+    /// The pin number used will depend on how the library was initialized.
+    ///
+    /// For more information on defining function pointers in Rust refer to the
+    /// [FFI Section] of the book. The function takes no parameters and returns
+    /// nothing. This function is essentially defined similar to any other
+    /// function but is prepended with `extern "C"`.
+    ///
+    /// [FFI Section]: https://doc.rust-lang.org/book/ffi.html
+    pub fn interupt_service_routine(number: i32,
+                                    edge_type: InterruptEdgeType,
+                                    callback: extern "C" fn()) {
+        unsafe {
+            bindings::wiringPiISR(number, edge_type.ordinal(), Some(callback));
+        }
+    }
+
+    // TODO look into how we want to handle the low level multi-threading and if it is necessary
 }
+
+// TODO Look into making this a range type of some sort
+#[derive(Debug)]
+pub struct ThreadPriority(u8);
+
+
 
 
 

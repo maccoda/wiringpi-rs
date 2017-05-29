@@ -89,6 +89,25 @@ impl Ordinal for PwmMode {
     }
 }
 
+#[derive(Debug)]
+pub enum InterruptEdgeType {
+    EdgeSetup,
+    FallingEdge,
+    RisingEdge,
+    BothEdges,
+}
+
+impl Ordinal for InterruptEdgeType {
+    fn ordinal(&self) -> i32 {
+        match self {
+            &InterruptEdgeType::EdgeSetup => 0,
+            &InterruptEdgeType::FallingEdge => 1,
+            &InterruptEdgeType::RisingEdge => 2,
+            &InterruptEdgeType::BothEdges => 3,
+        }
+    }
+}
+
 /// Trait to allow for enumerations to be converted to their ordinal
 /// representation within the enumeration.
 ///
