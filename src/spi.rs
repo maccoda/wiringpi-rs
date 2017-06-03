@@ -37,11 +37,15 @@ impl SpiDevice {
     }
 
     /// This performs a simultaneous write/read transaction over the selected
-    /// SPI bus. Data that was in your buffer is overwritten by data returned
-    /// from the SPI bus.
-    pub fn read_write(&self, data: &mut Vec<u8>) {
+    /// SPI bus. The returned value buffer will match the size of the provided
+    /// buffer.
+    pub fn read_write(&self, data: &Vec<u8>) -> Vec<u8> {
+        let mut clone_data = data.clone();
         unsafe {
-            bindings::wiringPiSPIDataRW(self.channel as i32, data.as_mut_ptr(), data.len() as i32);
+            bindings::wiringPiSPIDataRW(self.channel as i32,
+                                        clone_data.as_mut_ptr(),
+                                        data.len() as i32);
         }
+        clone_data
     }
 }
