@@ -6,8 +6,13 @@ use std::sync::{Once, ONCE_INIT};
 
 pub mod constants;
 
-#[cfg(feature = "serial")]
+#[derive(Debug)]
+struct FileDescriptor(i32);
+
+// #[cfg(feature = "serial")]
 pub mod serial;
+
+pub mod i2c;
 
 use constants::*;
 

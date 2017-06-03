@@ -8,9 +8,7 @@ use std::os::raw::{c_uchar, c_int};
 
 use super::{ErrorKind, Result};
 use bindings;
-
-#[derive(Debug)]
-struct FileDescriptor(i32);
+use super::FileDescriptor;
 
 #[derive(Debug)]
 pub struct SerialDevice {

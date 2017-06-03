@@ -2,12 +2,22 @@ extern crate bindgen;
 
 use std::env;
 use std::path::PathBuf;
+use std::process::Command;
 
 fn main() {
-    // Tell cargo to tell rustc to link the system bzip2
-    // shared library.
-    // println!("cargo:rustc-link-search=native=/usr/local/include/wiringPi/wiringPi");
-    println!("cargo:rustc-link-lib=wiringPi");
+    let out_dir = env::var("OUT_DIR").unwrap();
+    // Build the wiringPi library
+    match Command::new("make").arg("-e").arg("wiringpi").status() {
+        Ok(status) => {
+            if !status.success() {
+                panic!("failed to build wiringPi C library (exit code {:?})",
+                       status.code())
+            }
+        }
+        Err(e) => panic!("failed to build wiringPi C library: {}", e),
+    }
+    println!("cargo:rustc-link-search={}", out_dir);
+    println!("cargo:rustc-link-lib=static=wiringpi");
     // Crpyt needs to be linked last (need to look into why this is)
     println!("cargo:rustc-link-lib=crypt");
 
@@ -32,7 +42,7 @@ fn main() {
         .expect("Unable to generate bindings");
 
     // Write the bindings to the $OUT_DIR/bindings.rs file.
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let out_path = PathBuf::from(out_dir);
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");

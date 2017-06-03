@@ -1,5 +1,5 @@
 [package]
-name = "wiring-pi-rs"
+name = "wiringpi-rs"
 version = "0.1.0"
 authors = ["Dylan Maccora <maccora17@gmail.com>"]
 
