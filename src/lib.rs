@@ -21,7 +21,6 @@ use constants::*;
 error_chain!{
     errors {
         IncorrectConfiguration(t: String)
-        IllegalPinMode(t: String)
         WiringPiFail
     }
 }
@@ -75,14 +74,20 @@ impl WiringPi {
     /// Obtain access to the pin at the specified number.
     pub fn pin(&self, pin_number: u32) -> Pin {
         Pin {
-            number: pin_number,
-            mode: PinModes::Output,
+            number: pin_number as u8,
             config: self.config.clone(),
         }
     }
 
     /// Writes the byte provided to the first 8 GPIO pins. This is a more
     /// efficient way of writing to all.
+    ///
+    /// # Note
+    ///
+    /// * If configuration is [`WiringPiConfiguration::Sys`] this
+    /// function will have no effect
+    ///
+    /// [`WiringPiConfiguration::Sys`]: enum.WiringPiConfiguration.html
     pub fn digital_write_byte(&self, value: i32) {
         // TODO cannot be done in sys mode
         unsafe {
@@ -91,6 +96,13 @@ impl WiringPi {
     }
 
     /// Set the mode of the PWM generator to that supplied.
+    ///
+    /// # Note
+    ///
+    /// * If configuration is [`WiringPiConfiguration::Sys`] this
+    /// function will have no effect
+    ///
+    /// [`WiringPiConfiguration::Sys`]: enum.WiringPiConfiguration.html
     pub fn pwm_set_mode(&self, mode: PwmMode) {
         // TODO cannot be done in sys mode
         unsafe {
@@ -101,6 +113,13 @@ impl WiringPi {
     /// Set the range register of the PWM generator.
     ///
     /// The default value is **1024**.
+    ///
+    /// # Note
+    ///
+    /// * If configuration is [`WiringPiConfiguration::Sys`] this
+    /// function will have no effect
+    ///
+    /// [`WiringPiConfiguration::Sys`]: enum.WiringPiConfiguration.html
     pub fn pwm_set_range(&self, range: u32) {
         // TODO cannot be done in sys mode
         unsafe {
@@ -109,6 +128,13 @@ impl WiringPi {
     }
 
     /// Sets the clock divisor to that provided.
+    ///
+    /// # Note
+    ///
+    /// * If configuration is [`WiringPiConfiguration::Sys`] this
+    /// function will have no effect
+    ///
+    /// [`WiringPiConfiguration::Sys`]: enum.WiringPiConfiguration.html
     pub fn pwm_set_clock(&self, divisor: i32) {
         // TODO cannot be done in sys mode
         unsafe {
@@ -217,25 +243,34 @@ impl WiringPi {
 #[derive(Debug)]
 pub struct ThreadPriority(u8);
 
-
-
-
-
 /// Structure representing a physical GPIO pin on the Raspberyy Pi.
 #[derive(Debug)]
 pub struct Pin {
-    // TODO Consider using more typing rather than internal state to limit the
-    // number of functions. This will make for simpler code and more cohert
-    // usage of the library.
-    //
     // TODO Create a pin number type that is chosen based
     // on the configuration and ensures that the number is within range.
-    number: u32,
-    mode: PinModes,
+    number: u8,
     config: WiringPiConfiguration,
 }
 
 impl Pin {
+    /// Obtains a GPIO pin in the *Input* mode.
+    pub fn input(&self) -> InputPin {
+        self.set_pin_mode(PinModes::Input);
+        InputPin { number: self.number }
+    }
+
+    /// Obtains a GPIO pin in the *Output* mode.
+    pub fn output(&self) -> OutputPin {
+        self.set_pin_mode(PinModes::Output);
+        OutputPin { number: self.number }
+    }
+
+    /// Obtains a GPIO pin in the *PwmOutput* mode.
+    pub fn pwm_output(&self) -> PwmOutputPin {
+        self.set_pin_mode(PinModes::PwmOutput);
+        PwmOutputPin { number: self.number }
+    }
+
     /// Set the mode of the `Pin` to that specified.
     ///
     /// # Errors
@@ -244,45 +279,14 @@ impl Pin {
     /// function will have no effect
     ///
     /// [`WiringPiConfiguration::Sys`]: enum.WiringPiConfiguration.html
-    pub fn set_pin_mode(&mut self, mode: PinModes) -> Result<()> {
+    fn set_pin_mode(&self, mode: PinModes) {
         // TODO Add logic to ensure that the number of the pin matches the mode
         // attempting to set it to
-        self.check_config()
-            .and_then(|_| {
-                          self.mode = mode.clone();
-                          unsafe {
-                              bindings::pinMode(self.number as i32, mode as i32);
-                          }
-                          Ok(())
-                      })
-    }
-
-    /// Set the resistor mode of the `Pin` to that specified.
-    ///
-    /// # Errors
-    ///
-    /// * If configuration is [`WiringPiConfiguration::Sys`] this
-    /// function will have no effect
-    /// * If current mode of the pin is not [`Input`]
-    ///
-    ///
-    /// [`WiringPiConfiguration::Sys`]: enum.WiringPiConfiguration.html
-    /// [`Input`]: constants/enum.PinModes.html#variants
-    pub fn set_resistor_mode(&mut self, mode: ResistorMode) -> Result<()> {
-        self.check_config()
-            .and_then(|_| match self.mode {
-                          PinModes::Input => {
-                              unsafe {
-                                  bindings::pullUpDnControl(self.number as i32, mode as i32);
-                              }
-                              self.mode = PinModes::Input;
-                              Ok(())
-                          }
-                          _ => {
-                Err(ErrorKind::IllegalPinMode("Cannot set resistor mode as not input mode".into())
-                        .into())
+        if let Ok(_) = self.check_config() {
+            unsafe {
+                bindings::pinMode(self.number as i32, mode as i32);
             }
-                      })
+        }
     }
 
     /// Checks if Sys configuration as cannot change the mode of pins in this
@@ -295,38 +299,82 @@ impl Pin {
         }
         Ok(())
     }
+}
 
-    /// Writes the given value to the pin.
-    ///
-    /// # Errors
-    ///
-    /// * If current pin mode is not [`Output`]
-    ///
-    /// [`Output`]: constants/enum.PinModes.html#variants
-    pub fn digital_write(&self, value: DigitalOut) -> Result<()> {
-        match self.mode {
-            PinModes::Output => {
-                unsafe {
-                    bindings::digitalWrite(self.number as i32, value as i32);
-                }
-                Ok(())
-            }
-            _ => {
-                Err(ErrorKind::IllegalPinMode("Cannot write to pin not in output mode".into())
-                        .into())
-            }
-        }
-    }
+/// GPIO pin for which the mode has been set to [`Input`]
+///
+/// [`Input`]: constants/enum.PinModes.html#variants
+#[derive(Debug)]
+pub struct InputPin {
+    number: u8,
+}
 
+impl InputPin {
     /// Reads the logic level at the pin.
     pub fn digital_read(&self) -> DigitalOut {
-        // TODO Should ensure in the correct mode
         unsafe {
             let result = bindings::digitalRead(self.number as i32);
             result.into()
         }
     }
 
+    /// Returns the value read on the current analog input pin.
+    pub fn analog_read(&self) -> i32 {
+        unsafe { bindings::analogRead(self.number as i32) }
+    }
+
+    /// Set the resistor mode of the `Pin` to that specified.
+    ///
+    /// # Errors
+    ///FIXME
+    /// * If configuration is [`WiringPiConfiguration::Sys`] this
+    /// function will have no effect
+    /// * If current mode of the pin is not [`Input`]
+    ///
+    ///
+    /// [`WiringPiConfiguration::Sys`]: enum.WiringPiConfiguration.html
+    /// [`Input`]: constants/enum.PinModes.html#variants
+    pub fn set_resistor_mode(&self, mode: ResistorMode) {
+        unsafe {
+            bindings::pullUpDnControl(self.number as i32, mode as i32);
+        }
+    }
+}
+
+/// GPIO pin for which the mode has been set to [`Output`]
+///
+/// [`Output`]: constants/enum.PinModes.html#variants
+#[derive(Debug)]
+pub struct OutputPin {
+    number: u8,
+}
+
+impl OutputPin {
+    /// Writes the given value to the pin.
+    pub fn digital_write(&self, value: DigitalOut) {
+        unsafe {
+            bindings::digitalWrite(self.number as i32, value as i32);
+        }
+    }
+
+    /// Writes the given analog value to the pin.
+    // TODO Need to find out what the limit of value is.
+    pub fn analog_write(&self, value: i32) {
+        unsafe {
+            bindings::analogWrite(self.number as i32, value);
+        }
+    }
+}
+
+/// GPIO pin for which the mode has been set to [`PwmOutput`]
+///
+/// [`PwmOutput`]: constants/enum.PinModes.html#variants
+#[derive(Debug)]
+pub struct PwmOutputPin {
+    number: u8,
+}
+
+impl PwmOutputPin {
     /// Writes the given value to the PWM register for the pin.
     ///
     /// Note that Raspberry Pi has one on-board PWM pin.
@@ -337,27 +385,10 @@ impl Pin {
     /// function will have no effect
     ///
     /// [`WiringPiConfiguration::Sys`]: enum.WiringPiConfiguration.html
-    pub fn pwm_write(&self, value: u32) -> Result<()> {
+    pub fn pwm_write(&self, value: u32) {
         // TODO should throw error when not the correct pin
-        self.check_config()
-            .and_then(|_| {
-                          unsafe {
-                              bindings::pwmWrite(self.number as i32, value as i32);
-                          }
-                          Ok(())
-                      })
-    }
-
-    /// Returns the value read on the current analog input pin.
-    pub fn analog_read(&self) -> i32 {
-        // TODO Should ensure in the correct mode
-        unsafe { bindings::analogRead(self.number as i32) }
-    }
-
-    pub fn analog_write(&self, value: i32) {
-        // TODO Should ensure in the correct mode
         unsafe {
-            bindings::analogWrite(self.number as i32, value);
+            bindings::pwmWrite(self.number as i32, value as i32);
         }
     }
 }

@@ -7,9 +7,9 @@ pub enum PinModes {
     Output = 1,
     PwmOutput = 2,
     GpioClock = 3,
-    SoftPwmOutput = 4,
-    SoftToneOutput = 5,
-    PwmToneOutput = 6,
+    // SoftPwmOutput = 4,
+    // SoftToneOutput = 5,
+    // PwmToneOutput = 6,
 }
 
 /// Possible values to write to a digital output pin.
