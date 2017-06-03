@@ -14,6 +14,8 @@ pub mod serial;
 
 pub mod i2c;
 
+pub mod spi;
+
 use constants::*;
 
 error_chain!{
