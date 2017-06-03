@@ -92,7 +92,7 @@ impl WiringPi {
     pub fn pwm_set_mode(&self, mode: PwmMode) {
         // TODO cannot be done in sys mode
         unsafe {
-            bindings::pwmSetMode(mode.ordinal());
+            bindings::pwmSetMode(mode as i32);
         }
     }
 
@@ -204,7 +204,7 @@ impl WiringPi {
                                     edge_type: InterruptEdgeType,
                                     callback: extern "C" fn()) {
         unsafe {
-            bindings::wiringPiISR(number, edge_type.ordinal(), Some(callback));
+            bindings::wiringPiISR(number, edge_type as i32, Some(callback));
         }
     }
 
@@ -247,10 +247,10 @@ impl Pin {
         // attempting to set it to
         self.check_config()
             .and_then(|_| {
+                          self.mode = mode.clone();
                           unsafe {
-                              bindings::pinMode(self.number as i32, mode.ordinal());
+                              bindings::pinMode(self.number as i32, mode as i32);
                           }
-                          self.mode = mode;
                           Ok(())
                       })
     }
@@ -269,11 +269,11 @@ impl Pin {
     pub fn set_resistor_mode(&mut self, mode: ResistorMode) -> Result<()> {
         self.check_config()
             .and_then(|_| match self.mode {
-                          PinModes::Input(_) => {
+                          PinModes::Input => {
                               unsafe {
-                                  bindings::pullUpDnControl(self.number as i32, mode.ordinal());
+                                  bindings::pullUpDnControl(self.number as i32, mode as i32);
                               }
-                              self.mode = PinModes::Input(mode);
+                              self.mode = PinModes::Input;
                               Ok(())
                           }
                           _ => {
@@ -305,7 +305,7 @@ impl Pin {
         match self.mode {
             PinModes::Output => {
                 unsafe {
-                    bindings::digitalWrite(self.number as i32, value.ordinal());
+                    bindings::digitalWrite(self.number as i32, value as i32);
                 }
                 Ok(())
             }
