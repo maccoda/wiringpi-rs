@@ -11,10 +11,9 @@ struct FileDescriptor(i32);
 
 // #[cfg(feature = "serial")]
 pub mod serial;
-
 pub mod i2c;
-
 pub mod spi;
+pub mod shift;
 
 use constants::*;
 

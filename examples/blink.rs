@@ -5,8 +5,7 @@ use wiringpi_rs::constants::*;
 
 fn main() {
     let pi = WiringPi::new(WiringPiConfiguration::Def);
-    let mut pin = pi.pin(15);
-    pin.set_pin_mode(PinModes::Output);
+    let pin = pi.pin(15).output();
 
     loop {
         pin.digital_write(DigitalOut::High);
